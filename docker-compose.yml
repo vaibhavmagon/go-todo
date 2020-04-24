@@ -1,0 +1,48 @@
+version: '2'
+
+services:
+  db:
+    image: "mongo:latest"
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - 27017
+    environment:
+      - MONGO_INITDB_DATABASE=todo
+      - MONGO_INITDB_HOST=db
+    networks:
+      - backend
+    volumes:
+      - mongodb:/data/db
+
+  go-todo:
+    build:
+      context: . #This basically picks the Dockerfile
+    volumes:
+      # Mounts the project directory on the host to /app inside the container,
+      # allowing you to modify the code without having to rebuild the image.
+      - .:/$GOPATH/src/go-todo
+    # Expose ports [HOST:CONTAINER}
+    ports:
+      - "8080:8080"
+    # Set environment variables from this file
+    environment:
+      - MONGO_INITDB_HOST=db
+      - MONGO_INITDB_DATABASE=todo
+    # Link to containers in another service.
+    # Links also express dependency between services in the same way as depends_on,
+    # so they determine the order of service startup.
+    networks:
+      - backend # On which 2 containers are interacting.
+    depends_on:
+      - "db"
+    links: # Links to other container basis alias name.
+      - db
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mongodb:
